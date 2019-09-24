@@ -1,4 +1,3 @@
-
 package finite_field_origin
 
 const IRREDUCIBLEPOLY uint16 = 0b111110101
