@@ -85,6 +85,105 @@ func gf242gf28(a uint8) uint8 {
 	return result
 }
 
+func gf242gf22(a uint8) uint8 {
+	/*
+	matrix = [[1, 1, 1, 0],
+			  [0, 1, 1, 0],
+			  [0, 1, 0, 0],
+			  [0, 0, 0, 1]]
+	 */
+	var aBit [4]uint8
+	var resultList [4]uint8
+	var result uint8 = 0x00
+	// means the input is x = (x0, ..., x7)
+	for i := 0; i < 4; i++ {
+		aBit[3 - i] = a & 0x01
+		a >>= 1
+	}
+	resultList[0] = aBit[0]
+	resultList[1] = aBit[0] ^ aBit[1] ^ aBit[2]
+	resultList[2] = aBit[0] ^ aBit[1]
+	resultList[3] = aBit[3]
+	for i := 0; i < 4; i++ {
+		result <<= 1
+		result ^= resultList[i]
+	}
+	return result
+}
+
+func gf222gf24(a uint8) uint8 {
+	/*
+		matrix = [[1, 1, 0, 0],
+				  [0, 0, 1, 0],
+				  [0, 1, 1, 0],
+				  [0, 0, 0, 1]]
+	*/
+	var aBit [4]uint8
+	var resultList [4]uint8
+	var result uint8 = 0x00
+	// means the input is x = (x0, ..., x7)
+	for i := 0; i < 4; i++ {
+		aBit[3 - i] = a & 0x01
+		a >>= 1
+	}
+	resultList[0] = aBit[0]
+	resultList[1] = aBit[0] ^ aBit[2]
+	resultList[2] = aBit[1] ^ aBit[2]
+	resultList[3] = aBit[3]
+	for i := 0; i < 4; i++ {
+		result <<= 1
+		result ^= resultList[i]
+	}
+	return result
+}
+
+func multiplyGF22(a, b uint8) uint8 {
+	var result uint8
+	a1 := (a & 0x02) >> 1
+	a0 := a & 0x01
+	b1 := (b & 0x02) >> 1
+	b0 := b & 0x01
+	result1 := ((a1 ^ a0) & (b1 ^ b0)) ^ (a0 & b0)
+	result0 := a1 & b1 ^ a0 & b0
+	result = result1 << 1 | result0
+	return result
+}
+
+func inverseGF22(a uint8) uint8 {
+	var result uint8
+	a1 := (a & 0x02) >> 1
+	a0 := a & 0x01
+	result = (a1 << 1) | (a0 ^ a1)
+	return result
+}
+
+func multiplyGF24ByGF22(a, b uint8) uint8 {
+	a = gf242gf22(a)
+	b = gf242gf22(b)
+	var result uint8
+	a1 := (a & 0x0c) >> 2
+	a0 := a & 0x03
+	b1 := (b & 0x0c) >> 2
+	b0 := b & 0x03
+	temp1 := multiplyGF22(a1 ^ a0, b1 ^ b0) ^ multiplyGF22(a0, b0)
+	temp0 := multiplyGF22(a0, b0) ^ multiplyGF22(multiplyGF22(a1, b1), 0x02)
+	result = temp1 << 2 | temp0
+	result = gf222gf24(result)
+	return result
+}
+
+func inverseGF24ByGF22(a uint8) uint8 {
+	a = gf242gf22(a)
+	var result uint8
+	a1 := (a & 0x0c) >> 2
+	a0 := a & 0x03
+	temp1 := multiplyGF22(inverseGF22(multiplyGF22(inverseGF22(a1), 0x02) ^ multiplyGF22(a1, a0) ^ inverseGF22(a0)), a1)
+	temp0 := multiplyGF22(inverseGF22(multiplyGF22(inverseGF22(a1), 0x02) ^ multiplyGF22(a1, a0) ^ inverseGF22(a0)), (a0 ^ a1))
+	result = temp1 << 2 | temp0
+	result = gf222gf24(result)
+	return result
+}
+
 func multiplyGF24(a, b uint8) uint8 {
 	/*
 		a = a[0...3]
@@ -190,8 +289,8 @@ func Multiply(a, b uint8) uint8 {
 	a0 := a & 0x0f
 	b1 := b >> 4
 	b0 := b & 0x0f
-	temp1 := multiplyGF24(a1, b0) ^ multiplyGF24(a0, b1) ^ multiplyGF24(a1, b1)
-	temp0 := multiplyGF24(a0, b0) ^ multiplyGF24(multiplyGF24(a1, b1), 0x09)
+	temp1 := multiplyGF24ByGF22(a1, b0) ^ multiplyGF24ByGF22(a0, b1) ^ multiplyGF24ByGF22(a1, b1)
+	temp0 := multiplyGF24ByGF22(a0, b0) ^ multiplyGF24ByGF22(multiplyGF24ByGF22(a1, b1), 0x09)
 	result = temp1 << 4 | temp0
 	result = gf242gf28(result)
 	return result
@@ -202,8 +301,8 @@ func Inverse(a uint8) uint8 {
 	var result uint8
 	a1 := a >> 4
 	a0 := a & 0x0f
-	temp1 := multiplyGF24(inverseGF24(multiplyGF24(doubleMulGF24(a1), 0x09) ^ multiplyGF24(a1, a0) ^ doubleMulGF24(a0)), a1)
-	temp0 := multiplyGF24(inverseGF24(multiplyGF24(doubleMulGF24(a1), 0x09) ^ multiplyGF24(a1, a0) ^ doubleMulGF24(a0)), (a0 ^ a1))
+	temp1 := multiplyGF24ByGF22(inverseGF24ByGF22(multiplyGF24ByGF22(doubleMulGF24(a1), 0x09) ^ multiplyGF24ByGF22(a1, a0) ^ doubleMulGF24(a0)), a1)
+	temp0 := multiplyGF24ByGF22(inverseGF24ByGF22(multiplyGF24ByGF22(doubleMulGF24(a1), 0x09) ^ multiplyGF24ByGF22(a1, a0) ^ doubleMulGF24(a0)), (a0 ^ a1))
 	result = temp1 << 4 | temp0
 	result = gf242gf28(result)
 	return result

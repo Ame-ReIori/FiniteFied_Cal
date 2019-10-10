@@ -13,7 +13,7 @@ func xtime(x uint8) uint8 {
 	return result
 }
 
-func Mutiply(a, b uint8) uint8 {
+func Multiply(a, b uint8) uint8 {
 	var result uint8 = 0x00
 	var tempList []uint8
 	tempList = append(tempList, a)
