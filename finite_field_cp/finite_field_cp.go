@@ -3,10 +3,6 @@
  */
 package finite_field_cp
 
-import (
-	"fmt"
-)
-
 func gf282gf24(a uint8) uint8 {
 	/*
 		input: x[0...7]
@@ -39,7 +35,6 @@ func gf282gf24(a uint8) uint8 {
 	resultList[5] = aBit[0] ^ aBit[1] ^ aBit[4] ^ aBit[5] ^ aBit[6]
 	resultList[6] = aBit[4] ^ aBit[6]
 	resultList[7] = aBit[2] ^ aBit[4] ^ aBit[5] ^ aBit[7]
-	fmt.Printf("%v\n",resultList)
 	for i := 0; i < 8; i++ {
 		result <<= 1
 		result ^= resultList[i]
@@ -230,7 +225,7 @@ func doubleMulGF24(a uint8) uint8 {
 	return result
 }
 
-func inverseGF24(a uint8) uint8 {
+func InverseGF24(a uint8) uint8 {
 
 	var result uint8 = 0x00
 	var resultList [4]uint8
